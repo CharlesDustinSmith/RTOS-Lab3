@@ -1,0 +1,14 @@
+x <stdin>
++--------------------------------------------------------------------------+
+|              x                                                           |
+|              x                                                           |
+|        x  xx x                                                           |
+|       xx  xx x x  x                                                      |
+|       xx  xxxxxxxxx                                                      |
+|  x xx xxx xxxxxxxxx xx                                                   |
+|  x xxxxxxxxxxxxxxxx xx x      x                  xx                      |
+|xxxxxxxxxxxxxxxxxxxxxxx xx     x xx  x    x   x   xx    x         x      x|
+|   |__________M__A_____________|                                          |
++--------------------------------------------------------------------------+
+    N           Min           Max        Median           Avg        Stddev
+x 100          6.64          27.9         10.69       11.6632     4.0492032
