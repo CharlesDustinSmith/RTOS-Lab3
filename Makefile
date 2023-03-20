@@ -23,6 +23,7 @@ all: ${BINARIES}
 
 clean:
 	rm -f ${BINARIES}
+	rm -rf *.csv
 
 run: 
 	./serial

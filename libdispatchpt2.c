@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <dispatch/dispatch.h>
 #include <semaphore.h>
 
 #define JOBS 100 // define JOBS constant
@@ -27,10 +28,9 @@
 sem_t my_semaphore;
 int shared_resource = 0;
 
-void increment(int *countp);
+dispatch_function_t increment(int *countp);
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int counter = 0;
     struct timespec begin, end;
@@ -50,25 +50,34 @@ main(int argc, char *argv[])
         err(-1, "Failed to get start time");
     }
 
+    dispatch_queue_t que = dispatch_queue_create(NULL, NULL);
+    dispatch_group_t groups = dispatch_group_create();
+
     for (int i = 0; i < JOBS; i++)
     {
-        increment(&counter);
+        dispatch_group_async_f(groups, que, &counter, increment(&counter));
     }
+
+    dispatch_group_wait(groups, DISPATCH_TIME_FOREVER);
+    dispatch_release(groups);
 
     if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) != 0)
     {
         err(-1, "Failed to get end time");
     }
 
+    // release semaphore
+    sem_destroy(&my_semaphore);
+
     long diff = end.tv_nsec - begin.tv_nsec;
     diff += (1000 * 1000 * 1000) * (end.tv_sec - begin.tv_sec);
 
-    printf("Counter: %'d\n", counter);
+    printf("%f\n", ((double) diff));
 
     return 0;
 }
 
-void increment(int *countp)
+dispatch_function_t increment(int *countp)
 {
     for (int i = 0; i < WORK_PER_JOB; i++)
     {

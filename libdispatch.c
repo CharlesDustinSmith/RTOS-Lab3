@@ -21,52 +21,63 @@
 #include <time.h>
 #include <dispatch/dispatch.h>
 
+#include <err.h>
+#include <locale.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <dispatch/dispatch.h>
+#include <semaphore.h>
+
+#define JOBS 100 // define JOBS constant
+#define WORK_PER_JOB 1000 // define WORK_PER_JOB constant
+
+int shared_resource = 0;
+
 dispatch_function_t increment(int *countp);
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	int counter = 0;
-	struct timespec begin, end;
-	
-    dispatch_queue_t que =dispatch_queue_create(NULL, NULL);
+    int counter = 0;
+    struct timespec begin, end;
 
+    // Set C locale settings to get niceties like thousands separators
+    // for decimal numbers.
+    setlocale(LC_NUMERIC, "");
+
+    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin) != 0)
+    {
+        err(-1, "Failed to get start time");
+    }
+
+    dispatch_queue_t que = dispatch_queue_create(NULL, NULL);
     dispatch_group_t groups = dispatch_group_create();
 
-	// Set C locale settings to get niceties like thousands separators
-	// for decimal numbers.
-	setlocale(LC_NUMERIC, "");
-
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin) != 0)
-	{
-		err(-1, "Failed to get start time");
-	}
-
-	for (int i = 0; i < JOBS; i++)
-	{
+    for (int i = 0; i < JOBS; i++)
+    {
         dispatch_group_async_f(groups, que, &counter, increment(&counter));
-	}
+    }
 
-    dispatch_group_wait(groups, (dispatch_time_t)100);
+    dispatch_group_wait(groups, DISPATCH_TIME_FOREVER);
     dispatch_release(groups);
 
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) != 0)
-	{
-		err(-1, "Failed to get end time");
-	}
+    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) != 0)
+    {
+        err(-1, "Failed to get end time");
+    }
 
-	long diff = end.tv_nsec - begin.tv_nsec;
-	diff += (1000 * 1000 * 1000) * (end.tv_sec - begin.tv_sec);
+    long diff = end.tv_nsec - begin.tv_nsec;
+    diff += (1000 * 1000 * 1000) * (end.tv_sec - begin.tv_sec);
 
-	printf("%f\n", ((double)diff));
+    printf("%f\n", ((double) diff));
 
-	return 0;
+    return 0;
 }
 
 dispatch_function_t increment(int *countp)
 {
-	for (int i = 0; i < WORK_PER_JOB; i++)
-	{
-		(*countp)++;
-	}
+    for (int i = 0; i < WORK_PER_JOB; i++)
+    {
+        (*countp)++;
+    }
 }
