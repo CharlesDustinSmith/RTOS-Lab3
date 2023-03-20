@@ -2,6 +2,7 @@ BINARIES= \
 	serial \
 	pthreads \
 	libdispatch \
+	libdispatchpt2 \
 	pthreadspt2 \
 	serialpt2
 
@@ -33,6 +34,11 @@ run2:
 
 run3:
 	./libdispatch
+
+safety:
+	./serialpt2
+	./pthreadspt2
+	./libdispatchpt2
 
 ministat-run:
 	head -n 3 initial-serial-times.dat | ministat > mini3.txt

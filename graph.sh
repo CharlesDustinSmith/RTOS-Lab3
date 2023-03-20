@@ -12,5 +12,5 @@ done
 
 for i in {0..100}
 do 
-    make JOBS=${i} WORK_PER_JOB=100`` clean libdispatchpt2 && ./libdispatchpt2 >> libdispatchThreadpt2.csv
+    make JOBS=${i} WORK_PER_JOB=100 clean libdispatchpt2 && ./libdispatchpt2 >> libdispatchThreadpt2.csv
 done 

@@ -20,64 +20,67 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
-#include <semaphore.h>
 
-sem_t my_semaphore;
-int shared_resource = 0;
+#define JOBS 100 // define JOBS constant
+#define WORK_PER_JOB 1000 // define WORK_PER_JOB constant
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *increment(void *countp);
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	int counter = 0;
-	struct timespec begin, end;
+    int counter = 0;
+    struct timespec begin, end;
 
-    sem_init(&my_semaphore, 0, 1);
+    // Set C locale settings to get niceties like thousands separators
+    // for decimal numbers.
+    setlocale(LC_NUMERIC, "");
 
-	// Set C locale settings to get niceties like thousands separators
-	// for decimal numbers.
-	setlocale(LC_NUMERIC, "");
-
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin) != 0)
-	{
-		err(-1, "Failed to get start time");
-	}
+    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin) != 0)
+    {
+        err(-1, "Failed to get start time");
+    }
 
     pthread_t threads[JOBS];
     int rc;
     for (int i = 0; i < JOBS; i++)
-	{
-       rc = pthread_create(&threads[i], NULL, increment, &counter );
-	}
-    for(int i = 0; i < JOBS; i++) 
     {
-        pthread_join(threads[i], NULL);
+        rc = pthread_create(&threads[i], NULL, increment, &counter);
+        if (rc != 0)
+        {
+            err(-1, "Failed to create thread");
+        }
     }
-    
+    for (int i = 0; i < JOBS; i++)
+    {
+        rc = pthread_join(threads[i], NULL);
+        if (rc != 0)
+        {
+            err(-1, "Failed to join thread");
+        }
+    }
 
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) != 0)
-	{
-		err(-1, "Failed to get end time");
-	}
+    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) != 0)
+    {
+        err(-1, "Failed to get end time");
+    }
 
-	long diff = end.tv_nsec - begin.tv_nsec;
-	diff += (1000 * 1000 * 1000) * (end.tv_sec - begin.tv_sec);
+    long diff = end.tv_nsec - begin.tv_nsec;
+    diff += (1000 * 1000 * 1000) * (end.tv_sec - begin.tv_sec);
 
-	// printf("Counted to %'d in %'ld ns: %f ns/iter\n",
-	//        JOBS * WORK_PER_JOB, diff, ((double) diff) / counter);
+    printf("Counter: %ld\n", counter);
 
-    printf("%f\n", ((double) diff));
-
-	return 0;
+    return 0;
 }
 
 void *increment(void *countp)
 {
-	for (int i = 0; i < WORK_PER_JOB; i++)
-	{
-        sem_wait(&my_semaphore);
-		(*((int *)countp))++;
-        sem_post(&my_semaphore);
-	}
+    for (int i = 0; i < WORK_PER_JOB; i++)
+    {
+        pthread_mutex_lock(&mutex);
+        (*((int *)countp))++;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
 }
